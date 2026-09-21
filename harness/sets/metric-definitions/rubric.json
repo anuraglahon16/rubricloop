@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "source_sample": "Metric definitions for a data catalog (analytics engineering)",
+  "task": "Write the catalog definition for a business metric, given the SQL that computes it, for analysts and product managers who will read the definition instead of the SQL. The definition must state the grain (what one row or one value represents), the formula in words, the inclusion and exclusion filters exactly as the SQL applies them, and any caveat that follows from the SQL such as timezone, currency or late-arriving data. It must not contradict the SQL, must not invent caveats or business context the SQL does not support, and must stay under 100 words with no unexplained jargon. Each item contains the SQL followed by the definition being graded.",
+  "criteria": [
+    {
+      "id": "c1",
+      "name": "Matches the SQL",
+      "weight": 35,
+      "description": "Every statement about what is counted, summed, filtered or grouped agrees with the SQL.",
+      "anchors": {
+        "1": "Contradicts the SQL on the formula, a filter or the population (e.g. net for gross, adds fields not present).",
+        "3": "Consistent on the formula but misstates or omits one filter or the window.",
+        "5": "Formula, filters, window and population all match the SQL exactly."
+      },
+      "evidence_hint": "Quote the clause of the definition and the SQL fragment it contradicts or matches."
+    },
+    {
+      "id": "c2",
+      "name": "Grain stated",
+      "weight": 20,
+      "description": "Says clearly what one row or one value represents, including how missing groups appear.",
+      "anchors": {
+        "1": "Grain absent or wrong.",
+        "3": "Grain stated but ambiguous about the unit or about absent groups.",
+        "5": "Grain precise, including whether empty groups are absent or zero."
+      },
+      "evidence_hint": "Quote the sentence naming the grain."
+    },
+    {
+      "id": "c3",
+      "name": "No invented context",
+      "weight": 25,
+      "description": "Does not add owners, refresh schedules, business meaning or caveats that the SQL does not support.",
+      "anchors": {
+        "1": "Adds operational or business facts with no basis in the SQL.",
+        "3": "Adds one plausible but unsupported detail.",
+        "5": "Every claim is traceable to the SQL."
+      },
+      "evidence_hint": "Quote any claim that has no SQL support."
+    },
+    {
+      "id": "c4",
+      "name": "SQL-backed caveats",
+      "weight": 10,
+      "description": "Calls out consequences that follow from the SQL: rolling windows, timezone, restatement, exclusion bias.",
+      "anchors": {
+        "1": "No caveats, or caveats that are wrong.",
+        "3": "Mentions one relevant caveat, misses an obvious one.",
+        "5": "Names the caveats a careful reader of the SQL would name."
+      },
+      "evidence_hint": "Quote the caveat sentence."
+    },
+    {
+      "id": "c5",
+      "name": "Readable for a PM",
+      "weight": 10,
+      "description": "Under 100 words, plain words, no unexplained jargon.",
+      "anchors": {
+        "1": "Jargon a non-SQL reader cannot use, or over length.",
+        "3": "Mostly plain with one unexplained term.",
+        "5": "Plain, short, usable without reading the SQL."
+      },
+      "evidence_hint": "Quote any jargon or count the words."
+    }
+  ]
+}
