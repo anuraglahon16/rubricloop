@@ -58,16 +58,36 @@ or a change that cannot move a grade, such as UI copy or the Vercel config.
 
 ## What context it receives
 
-Subagents start fresh, so the spawning prompt must carry everything:
+Subagents start fresh, so the spawning prompt must carry everything. Concretely:
 
 1. The working directory.
-2. Which files changed, with a one-line summary of each change. Not the diff itself, and
-   not why the change was made.
-3. Baseline numbers from the last accepted run, if any exist. Without them the auditor
-   reports absolute numbers against the gates and says the baseline was missing.
-4. Which sets to run.
+2. Which files changed, with a one-line summary of each change. The summary, not the diff,
+   and never the reason the change was made.
+3. Baseline numbers from the last accepted run if any exist: agreement per set, and flag
+   recall. Without them the auditor reports absolute numbers against the gates and says
+   the baseline was missing.
+4. Which golden sets to run, by folder name under `harness/sets/`.
 
-It is told what changed but not the intent behind it. That asymmetry is the point.
+Everything else it fetches itself rather than being handed: both sets' `rubric.json` and
+`golden.json`, `src/prompts.js`, `buildGrade` in `src/lib.js`, and
+`.claude/skills/eval-golden-set/references/reading-results.md`, which its process names as
+the authority on interpretation. Passing those in the prompt would defeat the purpose,
+since keeping that read set out of the calling session is half the reason the subagent
+exists.
+
+What it does not receive:
+
+- The intent behind the change. It is told what changed, never why. That asymmetry is the
+  point.
+- Write or Edit tools. It cannot alter a prompt, an anchor or a human score, so it cannot
+  fix and re-judge, and it cannot quietly edit a frozen golden set.
+- A baseline of its own choosing. Baselines come from the caller, so it cannot pick a
+  flattering comparison.
+
+One thing it does inherit: `ANTHROPIC_API_KEY` from the environment, because
+`harness/run.mjs` needs it to grade and exits 2 without it. The auditor never reads,
+prints or copies the key and nothing instructs it to, but it is not isolated from the
+environment. A caller who has not exported the key gets a `pending` verdict, not a run.
 
 ## Gates
 
