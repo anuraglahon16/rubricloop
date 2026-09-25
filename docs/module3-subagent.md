@@ -138,15 +138,39 @@ report it. Two for two is a pattern, not an accident, so the definition gained a
 `Caveat:` line and a realistic 200-word cap. A format that forces a choice between
 honesty and compliance is a broken format.
 
-Known gap: no live end-to-end run against the real API has been done, because the key is
-not available locally and pulling it out of Vercel would break the rule that it never
-appears outside Vercel env vars and a local `.env`. Both tests therefore exercise the
-interpretation and refusal paths, not the grading path. To close the gap, on a machine
-with the key:
+**Test 3, the live end-to-end run.** The gap left by the first two tests is now closed.
+Run on 2026-09-25 against the real API, both sets, tree clean at `4b1f5d1`, so nothing was
+under judgement and the figures are absolute rather than deltas. Grader model
+`claude-sonnet-4-6`, the `harness/run.mjs` default. Result: `hold`.
 
 ```
-export ANTHROPIC_API_KEY=...
-# then: use the harness-auditor subagent to audit the current change
+support-replies      agreement 33% (target 70%), no baseline, exit 1
+metric-definitions   agreement 78% (target 70%), no baseline, exit 0
+Worst criterion      c5 MAE 1.17 on support-replies, cause in anchor_5
+Calibration          overconfident, 0.8-and-above buckets 38% of 8 and 67% of 3
+Flags                recall 50% (4/8), missed policy_risk on g06, g02, g04, g08
 ```
+
+Three gates tripped at once: support-replies came in at under half its threshold, flag
+recall sat at 50%, and both confidence bands at 0.8 and above breached the 80% calibration
+gate, which is the grader being confidently wrong rather than uncertain. The auditor
+returned one action, a rewrite of the support-replies `c5` anchors, then qualified it on
+the caveat line: all 12 support-replies items scored at or below the human, so `c5` is one
+visible instance of a set-wide downward bias that an anchor edit alone will not clear.
+
+**These numbers are a first measurement, not an accepted baseline.** Recording 33% as the
+baseline would freeze a known-broken figure as the comparison point and make a later
+repair read as a 37-point gain that nobody intended. The baseline slot stays open until a
+run clears the gate on both sets.
+
+**What the run exposed about the tooling,** neither item about the auditor's judgement:
+
+- `harness/run.mjs` prints to stdout and writes no report file, so a run leaves nothing on
+  disk. The numbers survive only where a person records them, which is why they are
+  transcribed above rather than linked.
+- The agent was still not called as `harness-auditor`. That session had started in a parent
+  directory, so `.claude/agents/` was never read, and the definition was loaded into a
+  fresh agent context exactly as in Tests 1 and 2. Starting the session from the repo root
+  makes `/agents` list it. The by-name path stays unexercised, three tests running.
 
 Roughly 21 cents a full audit at one cent an item.
