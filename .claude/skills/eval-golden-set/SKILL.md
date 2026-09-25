@@ -39,6 +39,11 @@ Building one by hand means retyping every batch item into JSON and remembering t
 
 ## Constraints and nuances
 
+- When the run is judging a change to the grade prompt, to scoring in `src/lib.js` or to a
+  rubric anchor, hand the run and the reading to the `harness-auditor` subagent
+  (`.claude/agents/harness-auditor.md`) rather than doing it here. The session that made
+  the change should not be the one that judges whether it helped. Use this skill for
+  building and validating the set; use the auditor for the verdict.
 - Never fill in human scores yourself when the requester has not provided them. An agent scoring its own golden set defeats the purpose. Leave blanks and say so.
 - Keep sets small and deliberate: 8 to 20 items. A golden set is a regression test, not a benchmark; it should run in under a minute and cost cents.
 - Do not edit a golden set and the grade prompt in the same change. Change one, run, then change the other, or you cannot tell which moved the number.

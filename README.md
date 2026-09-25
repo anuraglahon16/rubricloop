@@ -51,4 +51,5 @@ Each golden set lives in `harness/sets/<name>/` as `rubric.json` (the frozen ref
 - `api/claude.js`: serverless proxy to the Anthropic API
 - `harness/`: golden set, reference rubric, evaluation script and unit tests
 - `docs/`: PRD and system map
-- `docs/`: PRD
+- `.claude/skills/`: project skills (add a sample, build a golden set, release)
+- `.claude/agents/`: the `harness-auditor` subagent that judges a grader change (see `docs/module3-subagent.md`)
