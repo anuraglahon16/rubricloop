@@ -41,11 +41,15 @@ if (copyHits.length) fail(copyHits.slice(0, 15).join("\n    ") + (copyHits.lengt
 ok(`${files.length} files clean`);
 
 head("Secrets");
-const tracked = [];
-const walkAll = (d) => { for (const f of readdirSync(d)) { if (["node_modules", "dist", ".git"].includes(f)) continue; const p = join(d, f); if (statSync(p).isDirectory()) walkAll(p); else if (statSync(p).size < 2_000_000 && !/\.(png|pdf|zip|jpg)$/.test(f)) tracked.push(p); } };
-walkAll(root);
-const leaks = tracked.filter((p) => /sk-ant-[A-Za-z0-9_-]{8,}/.test(readFileSync(p, "utf8")));
-if (leaks.length) fail("possible API key in: " + leaks.map((p) => p.replace(root + "/", "")).join(", ") + ". Rotate the key before continuing.");
+// Scan what git actually tracks, which is what a leak would ship in. A walk of the working
+// tree also reads .env, the one local file CLAUDE.md sanctions for the key, so it could
+// never pass on a machine set up to run the harness. The .gitignore assertion below still
+// covers the untracked case.
+const tracked = run("git ls-files -z").split("\0").filter(Boolean)
+  .filter((f) => !/\.(png|pdf|zip|jpg)$/.test(f))
+  .filter((f) => { const a = join(root, f); return existsSync(a) && statSync(a).size < 2_000_000; });
+const leaks = tracked.filter((f) => /sk-ant-[A-Za-z0-9_-]{8,}/.test(readFileSync(join(root, f), "utf8")));
+if (leaks.length) fail("possible API key in tracked file(s): " + leaks.join(", ") + ". Rotate the key before continuing.");
 const gi = existsSync(join(root, ".gitignore")) ? readFileSync(join(root, ".gitignore"), "utf8") : "";
 if (!/^\.env$/m.test(gi)) fail(".env is not in .gitignore");
 ok(`no key strings in ${tracked.length} files; .env ignored`);
