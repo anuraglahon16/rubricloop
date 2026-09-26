@@ -1,6 +1,8 @@
 # RubricLoop
 
-A rubric-building and grading agent for LLM outputs. Prototype for Module 1: Design and Prototype Your AI Agent.
+A rubric-building and grading agent for LLM outputs, built across Modules 1 to 3: the agent
+itself, then reusable project skills and an evaluation harness, then a specialized
+`harness-auditor` subagent that judges whether a change to the grader should ship.
 
 The agent drafts a rubric from a task description and labelled examples, grades a batch of outputs against it, routes low-confidence or flagged items to a human review queue, and proposes rubric edits from the human's overrides. Approving edits creates a new rubric version and re-grades the disputed items.
 
@@ -41,6 +43,23 @@ ANTHROPIC_API_KEY=sk-ant-... node harness/run.mjs --threshold 0.7 --min-agreemen
 ```
 
 Each golden set lives in `harness/sets/<name>/` as `rubric.json` (the frozen reference rubric) and `golden.json` (items with human per-criterion scores). Pick one with `--set <name>`; the default is `support-replies`.
+
+## Module 3: the harness-auditor subagent
+
+`harness-auditor` independently judges whether a change to the grade prompt, to the scoring
+in `src/lib.js`, or to a rubric anchor made the grader better or worse. It validates and
+runs the frozen human-scored golden sets, reads the results against documented thresholds,
+and returns one `ship` / `hold` / `pending` verdict with a single recommended action.
+
+It is a subagent rather than a skill because the session that made a change is the worst
+judge of it. The auditor is never told the intent behind the edit, holds no Write or Edit
+tool so it cannot fix and re-judge, and keeps a large single-purpose read set out of the
+calling context. The `eval-golden-set` skill prepares and runs evaluation work and hands
+the judgement here.
+
+- Definition: `.claude/agents/harness-auditor.md`
+- Write-up covering what, why, when, the context it receives, and the tests:
+  `docs/module3-subagent.md`
 
 ## Structure
 
