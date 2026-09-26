@@ -173,4 +173,24 @@ run clears the gate on both sets.
   fresh agent context exactly as in Tests 1 and 2. Starting the session from the repo root
   makes `/agents` list it. The by-name path stays unexercised, three tests running.
 
+**What the recommended action was worth.** The auditor's one action, a rewrite of the
+support-replies `c5` anchors, was applied and that set re-run on its own. Agreement stayed
+at 33% and `c5` MAE stayed at 1.17, with the new anchor text confirmed present in the
+model payload, so the edit reached the grader and changed nothing. It was reverted.
+
+The per-item deltas say why it could not have worked. `g01` is scored 5 on all five
+criteria by the human and comes back at 4.25, and no item in the set scores above its
+human. The error is spread across every criterion (c1 0.58, c2 0.67, c3 0.75, c4 0.83,
+c5 1.17) rather than sitting where the anchor lives, so the cause is judge severity, not
+one vague anchor. `GRADE_SYSTEM` in `src/prompts.js` defines anchors at 1, 3 and 5 only
+and tells the model to use them literally, while the humans use 2 and 4 freely: five of
+the twelve `c5` human scores sit on those two unanchored rungs. A true 4 has nowhere to
+go and rounds down. That is the next thing to test, and it is a prompt change rather than
+a rubric one.
+
+Worth recording plainly: the gate caught a real defect, and the single action it named
+was the wrong one. The auditor's own caveat predicted this, saying the set-wide downward
+bias would not clear from an anchor edit. A verdict format that forces exactly one action
+buys focus at the cost of sometimes naming the most visible symptom instead of the cause.
+
 Roughly 21 cents a full audit at one cent an item.
