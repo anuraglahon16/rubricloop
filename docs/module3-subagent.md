@@ -2,6 +2,30 @@
 
 Definition: [`.claude/agents/harness-auditor.md`](../.claude/agents/harness-auditor.md)
 
+## Summary
+
+**What it does.** Judges whether a change to RubricLoop's grader made it better or worse.
+It validates and runs the frozen human-scored golden sets, reads the results against
+documented thresholds, and returns one `ship` / `hold` / `pending` verdict with a single
+recommended action. It does not build sets and it does not fix what it finds.
+
+**Why a subagent and not a skill.** The session that made the change is the worst judge of
+it, because it knows what the edit was meant to do and reads an ambiguous number kindly.
+The auditor is never told the intent. It also holds no Write or Edit tool, so it cannot fix
+and re-judge, and it keeps two harness runs' worth of output and a large single-purpose
+read set out of the calling context. A skill cannot do this, because a skill executes
+inside the context that made the change.
+
+**When it is called.** After an edit to `src/prompts.js`, to scoring or routing in
+`src/lib.js`, or to a `harness/sets/*/rubric.json` anchor, and before shipping any of
+those. The `eval-golden-set` skill hands the judgement here rather than making it.
+
+**What context it receives.** The working directory, which files changed with a one-line
+summary each, baselines from the last accepted run if any exist, and which sets to run.
+Never the reason for the change. Everything else it fetches itself.
+
+The sections below expand each of these, then log the tests.
+
 ## What it does
 
 RubricLoop is a grader. The only question that matters about it is whether the grader
