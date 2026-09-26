@@ -137,13 +137,13 @@ Under 200 words, no per-item table, at most two item ids as evidence, cause clau
 
 ## How it was tested
 
-Two tests, both run against the definition file as written. Neither could call the agent
-by its name, because `.claude/agents/` is read at session start and the definition was
-created mid-session; both loaded the same file as the agent's instructions into a fresh
-agent context instead. Calling it as `harness-auditor` works from the next session on.
+Four tests. The first three ran against the definition file as written but could not call
+the agent by its name, because `.claude/agents/` is read at session start and the
+definition was created mid-session; each loaded the same file as the agent's instructions
+into a fresh agent context instead. Test 4 is the registered by-name run.
 
-**Test 1, refusal to fabricate.** This machine has no `ANTHROPIC_API_KEY` (the key lives
-only in Vercel, per CLAUDE.md), so `harness/run.mjs` exits 2. This is the auditor's most
+**Test 1, refusal to fabricate.** That session had no `ANTHROPIC_API_KEY` in its
+environment, so `harness/run.mjs` exits 2. This is the auditor's most
 dangerous failure mode: a made-up evaluation is worse for this project than no
 evaluation. Result: `pending`, both sets validated but not run, the exit-2 mechanism
 named at `harness/run.mjs:19`, and an explicit closing line that it ran nothing and
@@ -192,10 +192,10 @@ run clears the gate on both sets.
 - `harness/run.mjs` prints to stdout and writes no report file, so a run leaves nothing on
   disk. The numbers survive only where a person records them, which is why they are
   transcribed above rather than linked.
-- The agent was still not called as `harness-auditor`. That session had started in a parent
-  directory, so `.claude/agents/` was never read, and the definition was loaded into a
-  fresh agent context exactly as in Tests 1 and 2. Starting the session from the repo root
-  makes `/agents` list it. The by-name path stays unexercised, three tests running.
+- The agent was not called as `harness-auditor` on this run. That session had started in a
+  parent directory, so `.claude/agents/` was never read, and the definition was loaded into
+  a fresh agent context exactly as in Tests 1 and 2. Starting the session from the repo
+  root makes the agent available under its name. Test 4 does that.
 
 **What the recommended action was worth.** The auditor's one action, a rewrite of the
 support-replies `c5` anchors, was applied and that set re-run on its own. Agreement stayed
@@ -216,5 +216,54 @@ Worth recording plainly: the gate caught a real defect, and the single action it
 was the wrong one. The auditor's own caveat predicted this, saying the set-wide downward
 bias would not clear from an anchor edit. A verdict format that forces exactly one action
 buys focus at the cost of sometimes naming the most visible symptom instead of the cause.
+
+**Test 4, the registered agent called by name.** Run on 2026-09-25 from a session started
+at the repo root, so `.claude/agents/harness-auditor.md` was read at start-up and the agent
+was registered under its own name. It was invoked as `harness-auditor`, not by loading the
+definition file into a generic agent, which closes the gap left by the first three tests.
+
+The spawn prompt carried the four documented inputs and nothing else: working directory,
+changed files (none, tree clean at `81a18db`), no accepted baseline, and the two set names.
+One line was added to it. This shell had no exported `ANTHROPIC_API_KEY`, so the prompt
+told the auditor the key sits in the gitignored `.env`, to load it inside each command that
+needs it, and never to print it. Without that line the run would have stopped at exit 2
+with a `pending` verdict, which Test 1 already covers. Result: `hold`, returned in the
+output block with every line filled.
+
+```
+support-replies      agreement 50% (target 70%), no baseline, exit 1
+metric-definitions   agreement 78% (target 70%), no baseline, exit 0
+Worst criterion      c4 MAE 1.08 on support-replies, cause in anchor_3
+Calibration          overconfident, 0.8-and-above buckets 43% of 7 and 67% of 3
+Flags                recall 25% per set, missed policy_risk on g04, g06, g08 and g02, g04, g08
+```
+
+Registration works, the four inputs are enough to drive a full audit, and the format held
+under a real run. Pass.
+
+**What Test 4 exposed: the numbers move on their own.** Nothing changed between Test 3 and
+this run. Same commit, same sets, same `claude-sonnet-4-6` grader, no edit to a prompt or
+an anchor. The figures still moved a long way:
+
+| | Test 3 | Test 4 |
+| --- | --- | --- |
+| support-replies agreement | 33% | 50% |
+| metric-definitions agreement | 78% | 78% |
+| Worst criterion | c5, MAE 1.17 | c4, MAE 1.08 |
+| Flag recall, 8 expectations | 50% | 25% |
+
+Seventeen points of agreement on a 12-item set is two items changing their mind, and the
+worst criterion swapped. Flag recall went the other way: both runs caught every
+`injection_suspect` and missed only `policy_risk`, 4 of 8 recalled in Test 3 and 2 of 8
+here. `metric-definitions` landing on 78% twice is the exception, not evidence of
+stability.
+
+This matters for the gates rather than for the auditor. The 5-point delta gate assumes a
+run is repeatable to within a few points; on sets this size it is not, so a small real
+regression and ordinary run-to-run noise look the same. The gate is still worth having,
+because a 17-point drop or a set falling under 70% is far outside that band, but a
+borderline delta should not be read as a result. The fixes are more items per set or
+repeated runs per audit, both of which cost money. Recorded here as a limit of the harness,
+not a fault in the subagent, and left for a later module.
 
 Roughly 21 cents a full audit at one cent an item.
